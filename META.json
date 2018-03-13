@@ -1,5 +1,5 @@
 {
-   "abstract" : "It's new $module",
+   "abstract" : "Multiple facets for your app.",
    "author" : [
       "Carlos Fernando Avila Gratz <cafe@kreato.com.br>"
    ],
@@ -52,6 +52,17 @@
       }
    },
    "release_status" : "unstable",
+   "resources" : {
+      "bugtracker" : {
+         "web" : "https://github.com/cafe01/mojolicious-plugin-facets/issues"
+      },
+      "homepage" : "https://github.com/cafe01/mojolicious-plugin-facets",
+      "repository" : {
+         "type" : "git",
+         "url" : "git://github.com/cafe01/mojolicious-plugin-facets.git",
+         "web" : "https://github.com/cafe01/mojolicious-plugin-facets"
+      }
+   },
    "version" : "0.01",
    "x_authority" : "cpan:CAFEGRATZ",
    "x_serialization_backend" : "JSON::PP version 2.27300"

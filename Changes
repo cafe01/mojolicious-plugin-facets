@@ -2,5 +2,6 @@ Revision history for Perl extension Mojolicious-Plugin-Facets
 
 {{$NEXT}}
 
-    - original version
+0.01 2018-03-13T18:17:47Z
 
+    - initial version.
