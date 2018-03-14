@@ -5,6 +5,7 @@ use Mojolicious::Routes;
 use Mojolicious::Static;
 use Mojolicious::Sessions;
 use Mojo::Cache;
+use Mojo::Path;
 
 our $VERSION = "0.03";
 
@@ -21,7 +22,8 @@ sub register {
 
         my $facet_config = $config->{$facet_name};
         die "Missing 'setup' key on facet '$facet_name' config." unless $facet_config->{setup};
-        die "Missing 'host' key on facet '$facet_name' config." unless $facet_config->{host};
+        die "Missing 'host' or 'path' key on facet '$facet_name' config."
+            unless $facet_config->{host} || $facet_config->{path};
 
         my $facet = {
             name => $facet_name,
@@ -30,7 +32,8 @@ sub register {
             static => Mojolicious::Static->new,
             sessions => Mojolicious::Sessions->new,
             renderer_paths => [@default_renderer_paths],
-            renderer_cache => Mojo::Cache->new
+            renderer_cache => Mojo::Cache->new,
+            $facet_config->{path} ? ( path => Mojo::Path->new($facet_config->{path})->leading_slash(1)->trailing_slash(0) ) : (),
         };
 
         # localize
@@ -54,9 +57,33 @@ sub register {
         my $active_facet;
         my $req_host = $c->req->headers->host;
         $req_host =~ s/:\d+$//;
+
         foreach my $facet (@facets) {
 
-            if ($req_host eq $facet->{host}) {
+            my $match = 0;
+
+            if ($facet->{host}) {
+                $match = 1 if $req_host eq $facet->{host};
+            }
+
+            if ($facet->{path}) {
+                $match = 1 if $c->req->url->path->contains($facet->{path});
+
+                # rebase
+                my $path_length = scalar @{$facet->{path}};
+                my $base_path = $c->req->url->base->path->trailing_slash(1);
+                my $req_path = $c->req->url->path->leading_slash(0);
+
+                while ($path_length--) {
+                    push @$base_path, shift @$req_path;
+                }
+
+                # warn "# length $path_length\n";
+                # $alias = shift @{$c->req->url->path->leading_slash(0)};
+                # return $c->reply->not_found unless defined $alias && length $alias;
+            }
+
+            if ($match) {
                 $active_facet = $facet;
                 last
             }
