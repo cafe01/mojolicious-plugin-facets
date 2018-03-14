@@ -60,6 +60,8 @@ sub register {
         if ($active_facet) {
             $c->app->log->debug(qq/Dispatching facet "$active_facet->{name}"/);
 
+            $c->stash->{'mojox.facet'} = $active_facet->{name};
+
             local $c->app->{routes} = $active_facet->{routes};
             local $c->app->{static} = $active_facet->{static};
             local $c->app->renderer->{paths} = $active_facet->{renderer_paths};
