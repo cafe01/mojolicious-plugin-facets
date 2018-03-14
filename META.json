@@ -63,7 +63,7 @@
          "web" : "https://github.com/cafe01/mojolicious-plugin-facets"
       }
    },
-   "version" : "0.02",
+   "version" : "0.03",
    "x_authority" : "cpan:CAFEGRATZ",
    "x_contributors" : [
       "Carlos Fernando Avila Gratz <cafe@q1software.com>",

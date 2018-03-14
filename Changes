@@ -2,6 +2,10 @@ Revision history for Perl extension Mojolicious-Plugin-Facets
 
 {{$NEXT}}
 
+0.03 2018-03-14T16:19:02Z
+
+    - facets now have their own sessions
+
 0.02 2018-03-14T01:52:30Z
 
     - fixed dependencies

@@ -7,8 +7,6 @@ Mojolicious::Plugin::Facets - Multiple facets for your app.
     package MyApp;
 
     use Mojo::Base 'Mojolicious';
-    use FindBin;
-
 
     sub startup {
         my $app = shift;
@@ -29,10 +27,15 @@ Mojolicious::Plugin::Facets - Multiple facets for your app.
         # set default static/renderer paths, routes and namespaces
         @{$app->static->paths} = ($app->home->child('backoffice/static')->to_string);
         @{$app->renderer->paths} = ($app->home->child('backoffice/template')->to_string);
-        @{$app->routes->namespaces} = ('MyApp::Backoffice');
 
+        # setup session
+        $app->sessions->cookie_name('backoffice');
+        $app->sessions->default_expiration(60 * 10); # 10 min
+
+        # setup routes
         my $r = $app->routes;
         @{$r->namespaces} = ('MyApp::Backoffice');
+        $r->get(...);
     }
 
 # DESCRIPTION
