@@ -3,8 +3,8 @@ package Mojolicious::Plugin::Facets;
 use Mojo::Base 'Mojolicious::Plugin';
 use Mojolicious::Routes;
 use Mojolicious::Static;
+use Mojolicious::Sessions;
 use Mojo::Cache;
-# use Data::Printer;
 
 our $VERSION = "0.02";
 
@@ -28,16 +28,22 @@ sub register {
             host => $facet_config->{host},
             routes => Mojolicious::Routes->new(namespaces => [@default_routes_namespaces]),
             static => Mojolicious::Static->new,
+            sessions => Mojolicious::Sessions->new,
             renderer_paths => [@default_renderer_paths],
             renderer_cache => Mojo::Cache->new
         };
 
+        # localize
         local $app->{routes} = $facet->{routes};
         local $app->{static} = $facet->{static};
+        local $app->{sessions} = $facet->{sessions};
         local $app->renderer->{paths} = $facet->{renderer_paths};
         local $app->renderer->{cache} = $facet->{renderer_cache};
+
+        # setup
         $facet_config->{setup}->($app);
 
+        # store
         push @facets, $facet;
     }
 
@@ -64,6 +70,7 @@ sub register {
 
             local $c->app->{routes} = $active_facet->{routes};
             local $c->app->{static} = $active_facet->{static};
+            local $c->app->{sessions} = $active_facet->{sessions};
             local $c->app->renderer->{paths} = $active_facet->{renderer_paths};
             local $c->app->renderer->{cache} = $active_facet->{renderer_cache};
             $next->();
@@ -95,8 +102,6 @@ Mojolicious::Plugin::Facets - Multiple facets for your app.
     package MyApp;
 
     use Mojo::Base 'Mojolicious';
-    use FindBin;
-
 
     sub startup {
         my $app = shift;
@@ -117,10 +122,15 @@ Mojolicious::Plugin::Facets - Multiple facets for your app.
         # set default static/renderer paths, routes and namespaces
         @{$app->static->paths} = ($app->home->child('backoffice/static')->to_string);
         @{$app->renderer->paths} = ($app->home->child('backoffice/template')->to_string);
-        @{$app->routes->namespaces} = ('MyApp::Backoffice');
 
+        # setup session
+        $app->sessions->cookie_name('backoffice');
+        $app->sessions->default_expiration(60 * 10); # 10 min
+
+        # setup routes
         my $r = $app->routes;
         @{$r->namespaces} = ('MyApp::Backoffice');
+        $r->get(...);
     }
 
 

@@ -1,7 +1,7 @@
 use strict;
 use Test::More 0.98;
 use Test::Mojo;
-use Data::Printer;
+# use Data::Printer;
 
 my $t = Test::Mojo->new('TestApp');
 
@@ -49,6 +49,18 @@ subtest 'controller namespaces' => sub {
 };
 
 
+subtest 'sessions' => sub {
+    $t->ua->max_redirects(1);
+
+    $t->get_ok('/session')
+      ->status_is(200)->json_is('/facet', 'none')->json_is('/cookie', 'mojolicious');
+
+    $t->get_ok('/session' => {'Host' => 'backoffice' })->status_is(200);
+    $t->get_ok('/dump-session' => {'Host' => 'backoffice' })
+      ->status_is(200)->json_is('/facet', 'backoffice')->json_is('/cookie', 'backoffice');
+};
+
+
 
 
 done_testing;
@@ -59,8 +71,6 @@ done_testing;
 
     use Mojo::Base 'Mojolicious';
     use FindBin;
-
-
 
     sub startup {
         my $app = shift;
@@ -79,6 +89,16 @@ done_testing;
         $app->routes->get('/' => { text => 'default root' });
         $app->routes->get('/page' => { template => 'page' });
         $app->routes->get('/controller')->to('foo#process');
+        $app->routes->get('/session' => sub {
+            my $c = shift;
+            $c->session->{facet} = 'none';
+            $c->session->{cookie} = $c->app->sessions->cookie_name;
+            $c->redirect_to('/dump-session');
+        });
+        $app->routes->get('/dump-session' => sub {
+            my $c = shift;
+            $c->render(json => $c->session);
+        });
 
     }
 
@@ -89,11 +109,24 @@ done_testing;
         @{$app->renderer->paths} = ($app->home->child('backoffice/template')->to_string);
         @{$app->routes->namespaces} = ('TestApp::Backoffice');
 
+        $app->sessions->cookie_name('backoffice');
+
         my $r = $app->routes;
         $r->get('/' => { text => 'backoffice root' });
         $r->get('/backoffice-page' => { template => 'page' });
         $app->routes->get('/controller')->to('foo#process');
 
+        $app->routes->get('/session' => sub {
+            my $c = shift;
+            $c->session->{facet} = 'backoffice';
+            $c->session->{cookie} = $c->app->sessions->cookie_name;
+            $c->rendered(200);
+        });
+
+        $app->routes->get('/dump-session' => sub {
+            my $c = shift;
+            $c->render(json => $c->session);
+        });
     }
 
     package TestApp::Foo;
