@@ -127,7 +127,7 @@ Mojolicious::Plugin::Facets - Multiple facets for your app.
 =head1 DESCRIPTION
 
 Mojolicious::Plugin::Facets allows you to declare multiple facets on a Mojolicious app.
-A Facet is a way to organize you app as if it were multiple apps. Each facet can
+A Facet is a way to organize your app as if it were multiple apps. Each facet can
 declare its own routes, namespaces, static paths and renderer paths.
 
 A common use case is to create a facet for the backoffice application.
