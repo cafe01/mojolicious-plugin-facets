@@ -2,10 +2,9 @@ package Mojolicious::Plugin::Facets;
 
 use Mojo::Base 'Mojolicious::Plugin';
 use Mojolicious::Routes;
-# use Mojolicious::Renderer;
 use Mojolicious::Static;
 use Mojo::Cache;
-use Data::Printer;
+# use Data::Printer;
 
 our $VERSION = "0.01";
 
@@ -48,6 +47,7 @@ sub register {
         # detect facet
         my $active_facet;
         my $req_host = $c->req->headers->host;
+        $req_host =~ s/:\d+$//;
         foreach my $facet (@facets) {
 
             if ($req_host eq $facet->{host}) {
@@ -94,7 +94,6 @@ Mojolicious::Plugin::Facets - Multiple facets for your app.
 
     use Mojo::Base 'Mojolicious';
     use FindBin;
-
 
 
     sub startup {
