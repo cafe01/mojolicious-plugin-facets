@@ -2,6 +2,13 @@ Revision history for Perl extension Mojolicious-Plugin-Facets
 
 {{$NEXT}}
 
+0.02 2018-03-14T01:52:30Z
+
+    - fixed dependencies
+    - stripping port from host string before matching facets
+    - stashing active facet name at 'mojox.facet'
+    - fixed minor typo (manwar) #1
+
 0.01 2018-03-13T18:17:47Z
 
     - initial version.

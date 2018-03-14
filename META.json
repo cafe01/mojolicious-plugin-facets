@@ -42,7 +42,7 @@
       },
       "runtime" : {
          "requires" : {
-            "perl" : "5.008001"
+            "Mojolicious" : "0"
          }
       },
       "test" : {
@@ -63,7 +63,11 @@
          "web" : "https://github.com/cafe01/mojolicious-plugin-facets"
       }
    },
-   "version" : "0.01",
+   "version" : "0.02",
    "x_authority" : "cpan:CAFEGRATZ",
+   "x_contributors" : [
+      "Carlos Fernando Avila Gratz <cafe@q1software.com>",
+      "Mohammad S Anwar <mohammad.anwar@yahoo.com>"
+   ],
    "x_serialization_backend" : "JSON::PP version 2.27300"
 }
