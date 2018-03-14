@@ -7,7 +7,7 @@ use Mojolicious::Sessions;
 use Mojo::Cache;
 use Mojo::Path;
 
-our $VERSION = "0.03";
+our $VERSION = "0.04";
 
 my @facets;
 
