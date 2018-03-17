@@ -14,6 +14,9 @@ my @facets;
 sub register {
     my ($self, $app, $config) = @_;
 
+    $app->hook(around_dispatch => \&_detect_facet);
+    $app->helper(facet_do => \&_facet_do);
+
     my @default_static_paths = @{ $app->static->paths };
     my @default_renderer_paths = @{ $app->renderer->paths };
     my @default_routes_namespaces = @{ $app->routes->namespaces };
@@ -50,24 +53,28 @@ sub register {
         push @facets, $facet;
     }
 
-    $app->hook(around_dispatch => sub {
-        my ($next, $c) = @_;
+}
 
-        # detect facet
-        my $active_facet;
-        my $req_host = $c->req->headers->host;
-        $req_host =~ s/:\d+$//;
+sub _detect_facet {
+    my ($next, $c) = @_;
 
-        foreach my $facet (@facets) {
+    # detect facet
+    my $active_facet;
+    my $req_host = $c->req->headers->host;
+    $req_host =~ s/:\d+$//;
 
-            my $match = 0;
+    foreach my $facet (@facets) {
 
-            if ($facet->{host}) {
-                $match = 1 if $req_host eq $facet->{host};
-            }
+        my $match = 0;
 
-            if ($facet->{path}) {
-                $match = 1 if $c->req->url->path->contains($facet->{path});
+        if ($facet->{host}) {
+            $match = 1 if $req_host eq $facet->{host};
+        }
+
+        if ($facet->{path}) {
+
+            if ($c->req->url->path->contains($facet->{path})) {
+                $match = 1;
 
                 # rebase
                 my $path_length = scalar @{$facet->{path}};
@@ -77,39 +84,52 @@ sub register {
                 while ($path_length--) {
                     push @$base_path, shift @$req_path;
                 }
-
-                # warn "# length $path_length\n";
-                # $alias = shift @{$c->req->url->path->leading_slash(0)};
-                # return $c->reply->not_found unless defined $alias && length $alias;
             }
-
-            if ($match) {
-                $active_facet = $facet;
-                last
+            else {
+                $match = 0;
             }
         }
 
-        # localize relevand data and continue dispatch chain
-        if ($active_facet) {
-            $c->app->log->debug(qq/Dispatching facet "$active_facet->{name}"/);
-
-            $c->stash->{'mojox.facet'} = $active_facet->{name};
-
-            local $c->app->{routes} = $active_facet->{routes};
-            local $c->app->{static} = $active_facet->{static};
-            local $c->app->{sessions} = $active_facet->{sessions};
-            local $c->app->renderer->{paths} = $active_facet->{renderer_paths};
-            local $c->app->renderer->{cache} = $active_facet->{renderer_cache};
-            $next->();
+        if ($match) {
+            $active_facet = $facet;
+            last
         }
-        else {
-            # no facet, continue dispatch
-            $next->();
-        }
+    }
 
-    });
+    # localize relevant data and continue dispatch chain
+    if ($active_facet) {
+        $c->app->log->debug(qq/Dispatching facet "$active_facet->{name}"/);
+
+        $c->stash->{'mojox.facet'} = $active_facet->{name};
+
+        local $c->app->{routes} = $active_facet->{routes};
+        local $c->app->{static} = $active_facet->{static};
+        local $c->app->{sessions} = $active_facet->{sessions};
+        local $c->app->renderer->{paths} = $active_facet->{renderer_paths};
+        local $c->app->renderer->{cache} = $active_facet->{renderer_cache};
+        $next->();
+    }
+    else {
+        # no facet, continue dispatch
+        $next->();
+    }
 }
 
+
+sub _facet_do {
+    my ($c, $facet_name, $code) = @_;
+
+    my ($facet) = grep { $_->{name} eq $facet_name } @facets;
+    die "Facet '$facet_name' do not exist." unless $facet;
+
+    local $c->app->{routes} = $facet->{routes};
+    local $c->app->{static} = $facet->{static};
+    local $c->app->{sessions} = $facet->{sessions};
+    local $c->app->renderer->{paths} = $facet->{renderer_paths};
+    local $c->app->renderer->{cache} = $facet->{renderer_cache};
+    local $c->{stash} = {};
+    $code->($c);
+}
 
 
 
@@ -140,6 +160,12 @@ Mojolicious::Plugin::Facets - Multiple facets for your app.
                 host   => 'backoffice.example.com',
                 setup  => \&_setup_backoffice
             }
+            # or a path-based facet
+            # request URL gets rebased to the facet path (for that path only)
+            # backoffice => {
+            #     path   => '/backoffice',
+            #     setup  => \&_setup_backoffice
+            # }
         );
     }
 
@@ -168,6 +194,18 @@ A Facet is a way to organize your app as if it were multiple apps. Each facet ca
 declare its own routes, namespaces, static paths and renderer paths.
 
 A common use case is to create a facet for the backoffice application.
+
+
+=head1 HELPERS
+
+=head2 facet_do
+
+Run a subroutine in the context of a facet. Any code related to sessions,
+routes, template rendering and static files works as if you were on that facet.
+
+    # Example: get backoffice facet session when the facet shares the same host (i.e. path-based facet)
+    my $backoffice_session = $c->facet_do(backoffice => sub { shift->session });
+
 
 =head1 LICENSE
 
