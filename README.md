@@ -18,6 +18,12 @@ Mojolicious::Plugin::Facets - Multiple facets for your app.
                 host   => 'backoffice.example.com',
                 setup  => \&_setup_backoffice
             }
+            # or a path-based facet
+            # request URL gets rebased to the facet path (for that path only)
+            # backoffice => {
+            #     path   => '/backoffice',
+            #     setup  => \&_setup_backoffice
+            # }
         );
     }
 
@@ -45,6 +51,16 @@ A Facet is a way to organize your app as if it were multiple apps. Each facet ca
 declare its own routes, namespaces, static paths and renderer paths.
 
 A common use case is to create a facet for the backoffice application.
+
+# HELPERS
+
+## facet\_do
+
+Run a subroutine in the context of a facet. Any code related to sessions,
+routes, template rendering and static files works as if you were on that facet.
+
+    # Example: get backoffice facet session when the facet shares the same host (i.e. path-based facet)
+    my $backoffice_session = $c->facet_do(backoffice => sub { shift->session });
 
 # LICENSE
 
