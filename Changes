@@ -2,6 +2,11 @@ Revision history for Perl extension Mojolicious-Plugin-Facets
 
 {{$NEXT}}
 
+0.06 2018-05-08T11:46:30Z
+
+    - implemented helper has_facet()
+    - new DEBUG_FACETS env variable
+
 0.05 2018-03-17T10:33:17Z
 
     - implemented facet_do() helper
