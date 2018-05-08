@@ -8,7 +8,7 @@ use Mojo::Cache;
 use Mojo::Path;
 use constant DEBUG => $ENV{DEBUG_FACETS};
 
-our $VERSION = "0.06";
+our $VERSION = "0.07";
 
 
 my @facets;
