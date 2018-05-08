@@ -22,6 +22,12 @@ subtest 'sessions' => sub {
 };
 
 
+subtest 'has_facet' => sub {
+    ok $t->app->has_facet('backoffice');
+    ok !$t->app->has_facet('unknown');
+};
+
+
 done_testing;
 
 

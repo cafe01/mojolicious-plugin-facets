@@ -6,8 +6,10 @@ use Mojolicious::Static;
 use Mojolicious::Sessions;
 use Mojo::Cache;
 use Mojo::Path;
+use constant DEBUG => $ENV{DEBUG_FACETS};
 
 our $VERSION = "0.05";
+
 
 my @facets;
 
@@ -16,6 +18,7 @@ sub register {
 
     $app->hook(around_dispatch => \&_detect_facet);
     $app->helper(facet_do => \&_facet_do);
+    $app->helper(has_facet => sub { exists $config->{$_[1]} });
 
     my @default_static_paths = @{ $app->static->paths };
     my @default_renderer_paths = @{ $app->renderer->paths };
@@ -98,7 +101,7 @@ sub _detect_facet {
 
     # localize relevant data and continue dispatch chain
     if ($active_facet) {
-        $c->app->log->debug(qq/Dispatching facet "$active_facet->{name}"/);
+        DEBUG and $c->app->log->debug(qq/Dispatching facet "$active_facet->{name}"/);
 
         $c->stash->{'mojox.facet'} = $active_facet->{name};
 
@@ -206,6 +209,10 @@ routes, template rendering and static files works as if you were on that facet.
     # Example: get backoffice facet session when the facet shares the same host (i.e. path-based facet)
     my $backoffice_session = $c->facet_do(backoffice => sub { shift->session });
 
+
+=head2 has_facet
+
+    if ($c->has_facet('foo')) { ... }
 
 =head1 LICENSE
 
