@@ -17,46 +17,60 @@ sub register {
     my ($self, $app, $config) = @_;
 
     $app->hook(around_dispatch => \&_detect_facet);
-    $app->helper(facet_do => \&_facet_do);
-    $app->helper(has_facet => sub { exists $config->{$_[1]} });
 
-    my @default_static_paths = @{ $app->static->paths };
-    my @default_renderer_paths = @{ $app->renderer->paths };
-    my @default_routes_namespaces = @{ $app->routes->namespaces };
+    $app->helper(facet_do => \&_facet_do);
+
+    $app->helper(has_facet => sub {
+        my ($c, $name) = @_;
+        return unless $name;
+        for (@facets) {
+            return 1 if $_->{name} eq $name;
+        }
+        return;
+    });
+
+    $app->helper(add_facet => sub {
+        shift;
+        $self->_add_facet($app, @_);
+    });
 
     foreach my $facet_name (keys %$config) {
-
-        my $facet_config = $config->{$facet_name};
-        die "Missing 'setup' key on facet '$facet_name' config." unless $facet_config->{setup};
-        die "Missing 'host' or 'path' key on facet '$facet_name' config."
-            unless $facet_config->{host} || $facet_config->{path};
-
-        my $facet = {
-            name => $facet_name,
-            host => $facet_config->{host},
-            routes => Mojolicious::Routes->new(namespaces => [@default_routes_namespaces]),
-            static => Mojolicious::Static->new,
-            sessions => Mojolicious::Sessions->new,
-            renderer_paths => [@default_renderer_paths],
-            renderer_cache => Mojo::Cache->new,
-            $facet_config->{path} ? ( path => Mojo::Path->new($facet_config->{path})->leading_slash(1)->trailing_slash(0) ) : (),
-        };
-
-        # localize
-        local $app->{routes} = $facet->{routes};
-        local $app->{static} = $facet->{static};
-        local $app->{sessions} = $facet->{sessions};
-        local $app->renderer->{paths} = $facet->{renderer_paths};
-        local $app->renderer->{cache} = $facet->{renderer_cache};
-
-        # setup
-        $facet_config->{setup}->($app);
-
-        # store
-        push @facets, $facet;
+        $self->_add_facet($app, $facet_name, $config->{$facet_name});
     }
-
 }
+
+sub _add_facet {
+    my ($self, $app, $facet_name, $facet_config) = @_;
+
+    die "Missing 'setup' key on facet '$facet_name' config." unless $facet_config->{setup};
+    die "Missing 'host' or 'path' key on facet '$facet_name' config."
+        unless $facet_config->{host} || $facet_config->{path};
+
+    my $facet = {
+        name => $facet_name,
+        host => $facet_config->{host},
+        routes => Mojolicious::Routes->new(namespaces => [@{ $app->routes->namespaces }]),
+        static => Mojolicious::Static->new,
+        sessions => Mojolicious::Sessions->new,
+        renderer_paths => [@{ $app->renderer->paths }],
+        renderer_cache => Mojo::Cache->new,
+        $facet_config->{path} ? ( path => Mojo::Path->new($facet_config->{path})->leading_slash(1)->trailing_slash(0) ) : (),
+    };
+
+    # localize
+    local $app->{routes} = $facet->{routes};
+    local $app->{static} = $facet->{static};
+    local $app->{sessions} = $facet->{sessions};
+    local $app->renderer->{paths} = $facet->{renderer_paths};
+    local $app->renderer->{cache} = $facet->{renderer_cache};
+
+    # setup
+    $facet_config->{setup}->($app);
+
+    # store
+    push @facets, $facet;
+}
+
 
 sub _detect_facet {
     my ($next, $c) = @_;
